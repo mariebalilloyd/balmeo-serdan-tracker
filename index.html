@@ -23,7 +23,7 @@
     --line:#D8CDAF;
     --radius:10px;
   }
-  *{box-sizing:border-box;}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
   body{margin:0;}
   #ledger-app{
     font-family:'Inter',sans-serif;
@@ -36,9 +36,10 @@
     background:var(--teal-deep);
     background-image:linear-gradient(180deg,var(--teal) 0%,var(--teal-deep) 100%);
     color:#F3EFE1;
-    padding:2.2rem 1.75rem 1.6rem;
+    padding:2rem 1.25rem 1.5rem;
     border-radius:0 0 22px 22px;
   }
+  .cover-inner{max-width:680px;margin:0 auto;}
   .cover-eyebrow{
     font-size:12px;
     letter-spacing:.12em;
@@ -50,84 +51,318 @@
   .cover h1{
     font-family:'Fraunces',serif;
     font-weight:500;
-    font-size:28px;
+    font-size:26px;
     margin:0 0 1.1rem;
     letter-spacing:.01em;
   }
   .stats{
     display:grid;
     grid-template-columns:repeat(3,1fr);
-    gap:10px;
+    gap:8px;
   }
   .stat{
     background:rgba(255,255,255,0.08);
     border:1px solid rgba(255,255,255,0.15);
     border-radius:var(--radius);
-    padding:.7rem .8rem;
+    padding:.65rem .7rem;
+    transition:background .15s ease;
   }
   .stat-label{
-    font-size:11px;
+    font-size:10.5px;
     text-transform:uppercase;
-    letter-spacing:.08em;
+    letter-spacing:.07em;
     color:#B7D9CF;
     margin:0 0 .3rem;
+    white-space:nowrap;
   }
   .stat-value{
     font-family:'IBM Plex Mono',monospace;
-    font-size:17px;
+    font-size:16px;
     font-weight:600;
     color:#F3EFE1;
+    transition:color .2s ease;
   }
-  .stat-value.warn{color:#F0C48A;}
   .stat-value.bad{color:#F0A492;}
+  .progress-track{
+    margin-top:.9rem;
+    height:6px;
+    border-radius:999px;
+    background:rgba(255,255,255,0.12);
+    overflow:hidden;
+  }
+  .progress-fill{
+    height:100%;
+    background:#8FD1BC;
+    border-radius:999px;
+    transition:width .5s cubic-bezier(.4,0,.2,1);
+    width:0%;
+  }
+  .progress-caption{
+    font-size:11px;
+    color:#B7D9CF;
+    margin:.4rem 0 0;
+  }
 
   .page{
     max-width:680px;
     margin:0 auto;
-    padding:0 1.25rem;
+    padding:0 1.1rem;
   }
 
-  .toolbar{
+  .controls{
+    position:sticky;
+    top:0;
+    z-index:5;
+    background:var(--paper);
+    padding:1rem 0 .7rem;
+  }
+  .view-tabs{
     display:flex;
-    gap:.6rem;
+    gap:6px;
+    margin-bottom:.7rem;
+    background:#EFE7D4;
+    padding:4px;
+    border-radius:10px;
+    width:fit-content;
+  }
+  .view-tab{
+    display:flex;
     align-items:center;
-    margin:1.5rem 0 1rem;
+    gap:5px;
+    font-size:13px;
+    font-weight:500;
+    padding:.4rem .8rem;
+    border-radius:7px;
+    border:none;
+    background:transparent;
+    color:var(--ink-soft);
+    min-height:34px;
   }
-  .toolbar input[type=text]{
+  .view-tab .ti{font-size:15px;}
+  .view-tab.active{
+    background:#FFFDF7;
+    color:var(--ink);
+    box-shadow:0 1px 2px rgba(0,0,0,.08);
+  }
+  .backup-row{
+    display:flex;
+    gap:.5rem;
+    margin-bottom:.7rem;
+    flex-wrap:wrap;
+  }
+  .cal-nav{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:.7rem;
+  }
+  .cal-nav-center{
+    display:flex;
+    align-items:center;
+    gap:.6rem;
+  }
+  .cal-month-label{
+    font-family:'Fraunces',serif;
+    font-size:17px;
+    font-weight:500;
+  }
+  .cal-today-btn{
+    font-size:12px;
+    font-weight:500;
+    color:var(--teal);
+    background:var(--teal-pale);
+    border:none;
+    border-radius:999px;
+    padding:.25rem .6rem;
+    min-height:auto;
+  }
+  .cal-today-btn:hover{background:#C9E3DB;}
+  .cal-weekdays{
+    display:grid;
+    grid-template-columns:repeat(7,1fr);
+    text-align:center;
+    font-size:11px;
+    color:var(--ink-soft);
+    font-weight:500;
+    margin-bottom:4px;
+  }
+  .cal-grid{
+    display:grid;
+    grid-template-columns:repeat(7,1fr);
+    gap:4px;
+  }
+  .cal-day{
+    position:relative;
+    aspect-ratio:1;
+    min-height:44px;
+    border-radius:8px;
+    border:1px solid var(--paper-line);
+    background:#FFFDF7;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:2px;
+    padding:2px;
+    cursor:pointer;
+    transition:border-color .15s ease,background .15s ease;
+  }
+  .cal-day:hover{border-color:var(--teal);}
+  .cal-day.outside{
+    opacity:.35;
+    cursor:default;
+  }
+  .cal-day.is-today{
+    border-color:var(--teal);
+    border-width:2px;
+  }
+  .cal-day.selected{
+    background:var(--teal-pale);
+    border-color:var(--teal);
+  }
+  .cal-day-num{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12.5px;
+  }
+  .cal-dots{
+    display:flex;
+    gap:2px;
+    flex-wrap:wrap;
+    justify-content:center;
+    max-width:100%;
+  }
+  .dot{
+    width:6px;
+    height:6px;
+    border-radius:50%;
+    display:inline-block;
+  }
+  .dot-overdue{background:var(--red);}
+  .dot-upcoming{background:var(--gold);}
+  .dot-settled{background:var(--teal);}
+  .cal-legend{
+    display:flex;
+    gap:14px;
+    justify-content:center;
+    margin:.85rem 0 .5rem;
+    font-size:11.5px;
+    color:var(--ink-soft);
+  }
+  .cal-legend span{display:flex;align-items:center;gap:5px;}
+  .cal-day-panel{
+    margin-top:.5rem;
+  }
+  .cal-day-panel-head{
+    font-family:'Fraunces',serif;
+    font-size:15px;
+    font-weight:500;
+    margin:0 0 .5rem;
+  }
+  .cal-entry{
+    background:#FFFDF7;
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:.6rem .75rem;
+    margin-bottom:8px;
+    display:flex;
+    align-items:center;
+    gap:.6rem;
+    flex-wrap:wrap;
+  }
+  .cal-entry-bill{
+    font-family:'Fraunces',serif;
+    font-size:14px;
+    font-weight:500;
     flex:1;
+    min-width:100px;
   }
+  .controls-row{
+    display:flex;
+    gap:.5rem;
+    align-items:center;
+  }
+  .search-wrap{
+    position:relative;
+    flex:1;
+    min-width:0;
+  }
+  .search-wrap .ti{
+    position:absolute;
+    left:10px;
+    top:50%;
+    transform:translateY(-50%);
+    color:var(--ink-soft);
+    font-size:15px;
+    pointer-events:none;
+  }
+  #search-bills{
+    width:100%;
+    padding-left:32px;
+  }
+  .filter-tabs{
+    display:flex;
+    gap:6px;
+    margin-top:.6rem;
+    overflow-x:auto;
+    scrollbar-width:none;
+    padding-bottom:2px;
+  }
+  .filter-tabs::-webkit-scrollbar{display:none;}
+  .filter-tab{
+    flex-shrink:0;
+    font-size:12.5px;
+    font-weight:500;
+    padding:.4rem .8rem;
+    border-radius:999px;
+    border:1px solid var(--line);
+    background:#FFFDF7;
+    color:var(--ink-soft);
+    white-space:nowrap;
+    min-height:32px;
+  }
+  .filter-tab.active{
+    background:var(--teal);
+    border-color:var(--teal);
+    color:#fff;
+  }
+  .filter-tab .count{
+    opacity:.75;
+    margin-left:3px;
+  }
+
   input[type=text],input[type=number],input[type=date]{
     font-family:'Inter',sans-serif;
     font-size:14px;
-    padding:.5rem .65rem;
+    padding:.55rem .65rem;
     border:1px solid var(--line);
     border-radius:8px;
     background:#FFFDF7;
     color:var(--ink);
+    min-height:40px;
   }
-  input:focus{outline:2px solid var(--teal);outline-offset:1px;}
+  input:focus-visible{outline:2px solid var(--teal);outline-offset:1px;}
   button{
     font-family:'Inter',sans-serif;
     cursor:pointer;
   }
+  button:focus-visible{outline:2px solid var(--teal);outline-offset:2px;}
   .btn{
     border:1px solid var(--teal);
     background:var(--teal);
     color:#fff;
     font-size:14px;
     font-weight:500;
-    padding:.5rem .9rem;
+    padding:.55rem 1rem;
     border-radius:8px;
+    min-height:40px;
+    transition:background .15s ease,transform .1s ease;
   }
   .btn:hover{background:var(--teal-deep);}
-  .btn.ghost{
-    background:transparent;
-    color:var(--teal);
-  }
-  .btn.ghost:hover{background:var(--teal-pale);}
+  .btn:active{transform:scale(.97);}
   .btn.small{
-    padding:.3rem .6rem;
+    padding:.4rem .7rem;
     font-size:12.5px;
+    min-height:34px;
   }
   .btn.danger{
     border-color:var(--red);
@@ -135,6 +370,17 @@
     background:transparent;
   }
   .btn.danger:hover{background:var(--red-pale);}
+  .btn.danger.confirming{
+    background:var(--red);
+    color:#fff;
+  }
+
+  .add-bill-row{
+    display:flex;
+    gap:.5rem;
+    margin-top:.7rem;
+  }
+  .add-bill-row input{flex:1;min-width:0;}
 
   .bill{
     background:#FFFDF7;
@@ -142,53 +388,76 @@
     border-radius:var(--radius);
     margin-bottom:10px;
     overflow:hidden;
+    transition:border-color .15s ease;
+    animation:appear .25s ease;
   }
+  @keyframes appear{
+    from{opacity:0;transform:translateY(4px);}
+    to{opacity:1;transform:translateY(0);}
+  }
+  .bill.hidden-by-filter{display:none;}
   .bill-head{
     display:flex;
     align-items:center;
     justify-content:space-between;
-    gap:.75rem;
-    padding:.85rem 1rem;
+    gap:.6rem;
+    padding:.85rem .95rem;
     cursor:pointer;
+    min-height:56px;
   }
   .bill-head:hover{background:#FBF7EC;}
   .bill-name-row{
     display:flex;
     align-items:center;
-    gap:.6rem;
+    gap:.55rem;
     min-width:0;
   }
   .chev{
     color:var(--ink-soft);
-    font-size:12px;
-    transition:transform .15s ease;
+    font-size:13px;
+    transition:transform .2s ease;
     flex-shrink:0;
+    display:inline-flex;
   }
   .bill.open .chev{transform:rotate(90deg);}
   .bill-name{
     font-family:'Fraunces',serif;
-    font-size:16.5px;
+    font-size:16px;
     font-weight:500;
     white-space:nowrap;
     overflow:hidden;
     text-overflow:ellipsis;
+    border-bottom:1px dashed transparent;
+  }
+  .bill-name:hover{border-bottom-color:var(--line);}
+  .bill-name-input{
+    font-family:'Fraunces',serif;
+    font-size:16px;
+    font-weight:500;
+    border:none;
+    border-bottom:1px solid var(--teal);
+    background:transparent;
+    padding:0 0 1px;
+    min-height:auto;
+    width:100%;
   }
   .bill-right{
     display:flex;
     align-items:center;
-    gap:.6rem;
+    gap:.5rem;
     flex-shrink:0;
   }
   .amount{
     font-family:'IBM Plex Mono',monospace;
-    font-size:14.5px;
+    font-size:14px;
     font-weight:500;
+    white-space:nowrap;
   }
   .badge{
-    font-size:11px;
+    font-size:10.5px;
     font-weight:600;
     letter-spacing:.03em;
-    padding:.2rem .55rem;
+    padding:.25rem .55rem;
     border-radius:999px;
     text-transform:uppercase;
     white-space:nowrap;
@@ -197,26 +466,32 @@
   .badge.overdue{background:var(--red-pale);color:var(--red);}
   .badge.settled{background:var(--teal-pale);color:var(--teal-deep);}
 
-  .bill-body{
-    display:none;
-    border-top:1px dashed var(--line);
-    padding:.75rem 1rem 1rem;
+  .bill-body-wrap{
+    display:grid;
+    grid-template-rows:0fr;
+    transition:grid-template-rows .25s ease;
   }
-  .bill.open .bill-body{display:block;}
+  .bill.open .bill-body-wrap{grid-template-rows:1fr;}
+  .bill-body-inner{overflow:hidden;}
+  .bill-body{
+    border-top:1px dashed var(--line);
+    padding:.75rem .95rem 1rem;
+  }
 
   .entry-row{
     display:flex;
     align-items:center;
     gap:.5rem;
-    padding:.5rem 0;
+    padding:.55rem 0;
     border-bottom:1px solid var(--paper-line);
+    flex-wrap:wrap;
   }
   .entry-row:last-of-type{border-bottom:none;}
   .entry-date{
     font-family:'IBM Plex Mono',monospace;
     font-size:13px;
     color:var(--ink-soft);
-    width:78px;
+    width:70px;
     flex-shrink:0;
   }
   .entry-amount{
@@ -224,6 +499,7 @@
     font-size:14px;
     font-weight:500;
     flex:1;
+    min-width:80px;
   }
   .stamp{
     display:inline-block;
@@ -239,40 +515,48 @@
     text-transform:uppercase;
     opacity:.85;
     white-space:nowrap;
+    animation:stampin .2s ease;
+  }
+  @keyframes stampin{
+    from{opacity:0;transform:rotate(-6deg) scale(1.6);}
+    to{opacity:.85;transform:rotate(-6deg) scale(1);}
   }
   .entry-actions{
     display:flex;
     gap:.4rem;
     flex-shrink:0;
+    margin-left:auto;
   }
   .icon-btn{
     border:1px solid var(--line);
     background:#fff;
     border-radius:6px;
-    width:28px;
-    height:28px;
+    width:34px;
+    height:34px;
     display:flex;
     align-items:center;
     justify-content:center;
     color:var(--ink-soft);
-    font-size:13px;
+    font-size:14px;
+    transition:background .15s ease,color .15s ease,border-color .15s ease;
   }
-  .icon-btn:hover{background:var(--paper-line);}
-  .icon-btn.mark:hover{color:var(--teal);border-color:var(--teal);}
-  .icon-btn.del:hover{color:var(--red);border-color:var(--red);}
+  .icon-btn:active{transform:scale(.94);}
+  .icon-btn.mark:hover{color:var(--teal);border-color:var(--teal);background:var(--teal-pale);}
+  .icon-btn.del:hover{color:var(--red);border-color:var(--red);background:var(--red-pale);}
 
   .add-entry{
     display:flex;
     gap:.5rem;
     margin-top:.75rem;
     align-items:center;
+    flex-wrap:wrap;
   }
-  .add-entry input[type=date]{width:135px;}
-  .add-entry input[type=number]{width:110px;}
+  .add-entry input[type=date]{width:140px;}
+  .add-entry input[type=number]{width:110px;flex:1;min-width:90px;}
   .bill-footer{
     display:flex;
     justify-content:flex-end;
-    margin-top:.6rem;
+    margin-top:.7rem;
   }
   .empty-note{
     font-size:13px;
@@ -286,53 +570,148 @@
     color:var(--ink-soft);
   }
   .empty-state p{margin:.3rem 0;}
+  .empty-state .ti{font-size:28px;color:var(--line);margin-bottom:.4rem;}
+
+  .toast-wrap{
+    position:fixed;
+    left:50%;
+    bottom:18px;
+    transform:translateX(-50%);
+    z-index:50;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    align-items:center;
+    pointer-events:none;
+  }
+  .toast{
+    background:var(--ink);
+    color:#F3EFE1;
+    font-size:13px;
+    padding:.55rem 1rem;
+    border-radius:999px;
+    box-shadow:0 4px 16px rgba(0,0,0,.18);
+    animation:toastin .2s ease, toastout .2s ease 1.8s forwards;
+    white-space:nowrap;
+  }
+  @keyframes toastin{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+  @keyframes toastout{to{opacity:0;transform:translateY(-6px);}}
+
   .sr-only{
     position:absolute;width:1px;height:1px;padding:0;margin:-1px;
     overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
   }
-  @media (max-width:420px){
-    .stats{grid-template-columns:1fr 1fr;}
-    .bill-name{font-size:15px;}
+
+  @media (max-width:460px){
+    .stats{grid-template-columns:1fr 1fr 1fr;gap:6px;}
+    .stat{padding:.55rem .5rem;}
+    .stat-value{font-size:14px;}
+    .bill-name{font-size:15px;max-width:120px;}
+    .add-bill-row{flex-wrap:wrap;}
+    .add-bill-row .btn{width:100%;}
+    .cal-day{min-height:38px;}
+    .cal-day-num{font-size:11px;}
+    .cal-month-label{font-size:15px;}
+    .cal-legend{gap:9px;font-size:10.5px;flex-wrap:wrap;}
+  }
+  @media (max-width:360px){
+    .bill-right .amount{display:none;}
   }
 </style>
 </head>
 <body>
 <div id="ledger-app">
-  <h2 class="sr-only">Interactive bills ledger tracking due dates, amounts and payment status for household bills.</h2>
+  <h2 class="sr-only">Interactive bills ledger tracking due dates, amounts and payment status for household bills, with search, filters, and inline editing.</h2>
   <div class="cover">
-    <p class="cover-eyebrow">Household ledger</p>
-    <h1>Bills tracker</h1>
-    <div class="stats">
-      <div class="stat">
-        <p class="stat-label">Owed now</p>
-        <p class="stat-value" id="stat-due">₱0</p>
+    <div class="cover-inner">
+      <p class="cover-eyebrow">Household ledger</p>
+      <h1>Bills tracker</h1>
+      <div class="stats">
+        <div class="stat">
+          <p class="stat-label">Owed now</p>
+          <p class="stat-value" id="stat-due">₱0</p>
+        </div>
+        <div class="stat">
+          <p class="stat-label">Overdue</p>
+          <p class="stat-value" id="stat-overdue">0</p>
+        </div>
+        <div class="stat">
+          <p class="stat-label">Paid, 30d</p>
+          <p class="stat-value" id="stat-paid">₱0</p>
+        </div>
       </div>
-      <div class="stat">
-        <p class="stat-label">Overdue</p>
-        <p class="stat-value bad" id="stat-overdue">0</p>
-      </div>
-      <div class="stat">
-        <p class="stat-label">Paid, last 30d</p>
-        <p class="stat-value" id="stat-paid">₱0</p>
-      </div>
+      <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+      <p class="progress-caption" id="progress-caption">0 of 0 entries settled</p>
     </div>
   </div>
 
   <div class="page">
-    <div class="toolbar">
-      <input type="text" id="new-bill-name" placeholder="Add a bill, e.g. Meralco Serdan">
-      <button class="btn" id="add-bill-btn">Add bill</button>
+    <div class="controls">
+      <div class="view-tabs" id="view-tabs" role="tablist">
+        <button class="view-tab active" role="tab" data-view="list"><i class="ti ti-list" aria-hidden="true"></i>List</button>
+        <button class="view-tab" role="tab" data-view="calendar"><i class="ti ti-calendar" aria-hidden="true"></i>Calendar</button>
+      </div>
+      <div class="backup-row">
+        <button class="btn ghost small" id="export-btn"><i class="ti ti-download" aria-hidden="true" style="vertical-align:-2px;margin-right:3px;"></i>Export backup</button>
+        <button class="btn ghost small" id="import-btn"><i class="ti ti-upload" aria-hidden="true" style="vertical-align:-2px;margin-right:3px;"></i>Import backup</button>
+        <input type="file" id="import-file" accept="application/json" style="display:none;">
+      </div>
+      <div id="list-controls">
+        <div class="controls-row">
+          <div class="search-wrap">
+            <i class="ti ti-search" aria-hidden="true"></i>
+            <input type="text" id="search-bills" placeholder="Search bills">
+          </div>
+        </div>
+        <div class="filter-tabs" id="filter-tabs" role="tablist"></div>
+      </div>
+      <div class="add-bill-row">
+        <input type="text" id="new-bill-name" placeholder="Add a bill, e.g. Meralco Serdan">
+        <button class="btn" id="add-bill-btn"><i class="ti ti-plus" aria-hidden="true" style="vertical-align:-2px;margin-right:4px;"></i>Add bill</button>
+      </div>
     </div>
-    <div id="bill-list"></div>
+    <div id="list-view">
+      <div id="bill-list"></div>
+    </div>
+    <div id="calendar-view" style="display:none;">
+      <div class="cal-nav">
+        <button class="icon-btn" id="cal-prev" aria-label="Previous month"><i class="ti ti-chevron-left" aria-hidden="true"></i></button>
+        <div class="cal-nav-center">
+          <span class="cal-month-label" id="cal-month-label"></span>
+          <button class="cal-today-btn" id="cal-today-btn">Today</button>
+        </div>
+        <button class="icon-btn" id="cal-next" aria-label="Next month"><i class="ti ti-chevron-right" aria-hidden="true"></i></button>
+      </div>
+      <div class="cal-weekdays">
+        <span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span>
+      </div>
+      <div class="cal-grid" id="cal-grid"></div>
+      <div class="cal-legend">
+        <span><i class="dot dot-overdue"></i>Overdue</span>
+        <span><i class="dot dot-upcoming"></i>Upcoming</span>
+        <span><i class="dot dot-settled"></i>Settled</span>
+      </div>
+      <div id="cal-day-panel"></div>
+    </div>
   </div>
 </div>
+<div class="toast-wrap" id="toast-wrap"></div>
 
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/2.47.0/iconfont/tabler-icons.min.css">
 <script>
 (function(){
   var STORAGE_KEY = 'bills';
   var openIds = {};
   var bills = [];
   var todayStr = new Date().toISOString().slice(0,10);
+  var activeFilter = 'all';
+  var searchTerm = '';
+  var confirmingDelete = {};
+  var currentView = 'list';
+  var todayDate = new Date(todayStr + 'T00:00:00');
+  var calYear = todayDate.getFullYear();
+  var calMonth = todayDate.getMonth();
+  var selectedDate = todayStr;
 
   function uid(){ return Math.random().toString(36).slice(2,10); }
 
@@ -355,27 +734,37 @@
     ];
   }
 
+  function toast(msg){
+    var wrap = document.getElementById('toast-wrap');
+    var el = document.createElement('div');
+    el.className = 'toast';
+    el.textContent = msg;
+    wrap.appendChild(el);
+    setTimeout(function(){ el.remove(); }, 2000);
+  }
+
   function save(){
     try{
-      window.storage.set(STORAGE_KEY, JSON.stringify(bills), false).catch(function(err){
-        console.error('Storage save failed', err);
-      });
-    }catch(err){ console.error('Storage error', err); }
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(bills));
+    }catch(err){
+      console.error('Storage error', err);
+      toast('Could not save changes');
+    }
   }
 
   function load(){
-    window.storage.get(STORAGE_KEY, false).then(function(res){
-      if(res && res.value){
-        try{ bills = JSON.parse(res.value); }catch(e){ bills = seedData(); }
+    try{
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if(raw){
+        try{ bills = JSON.parse(raw); }catch(e){ bills = seedData(); }
       } else {
         bills = seedData();
         save();
       }
-      render();
-    }).catch(function(){
+    }catch(err){
       bills = seedData();
-      render();
-    });
+    }
+    render();
   }
 
   function fmtMoney(n){
@@ -402,39 +791,230 @@
     return unpaid[0];
   }
 
+  function billOverallStatus(bill){
+    if(bill.entries.length === 0) return 'none';
+    var hasOverdue = bill.entries.some(function(e){ return !e.paid && e.dueDate < todayStr; });
+    if(hasOverdue) return 'overdue';
+    var hasUpcoming = bill.entries.some(function(e){ return !e.paid; });
+    if(hasUpcoming) return 'upcoming';
+    return 'settled';
+  }
+
   function computeStats(){
-    var owed = 0, overdueCount = 0, paidRecent = 0;
+    var owed = 0, overdueCount = 0, paidRecent = 0, totalEntries = 0, settledEntries = 0;
     var cutoff = new Date(todayStr + 'T00:00:00');
     cutoff.setDate(cutoff.getDate() - 30);
     bills.forEach(function(bill){
       bill.entries.forEach(function(entry){
+        totalEntries++;
         if(!entry.paid){
           owed += entry.amount;
           if(entry.dueDate < todayStr) overdueCount++;
-        } else if(entry.paidDate){
-          var pd = new Date(entry.paidDate + 'T00:00:00');
-          if(pd >= cutoff) paidRecent += entry.amount;
+        } else {
+          settledEntries++;
+          if(entry.paidDate){
+            var pd = new Date(entry.paidDate + 'T00:00:00');
+            if(pd >= cutoff) paidRecent += entry.amount;
+          }
         }
       });
     });
     document.getElementById('stat-due').textContent = fmtMoney(owed);
-    document.getElementById('stat-overdue').textContent = overdueCount;
-    document.getElementById('stat-overdue').className = 'stat-value' + (overdueCount > 0 ? ' bad' : '');
+    var ov = document.getElementById('stat-overdue');
+    ov.textContent = overdueCount;
+    ov.className = 'stat-value' + (overdueCount > 0 ? ' bad' : '');
     document.getElementById('stat-paid').textContent = fmtMoney(paidRecent);
+    var pct = totalEntries === 0 ? 0 : Math.round((settledEntries/totalEntries)*100);
+    document.getElementById('progress-fill').style.width = pct + '%';
+    document.getElementById('progress-caption').textContent = settledEntries + ' of ' + totalEntries + ' entries settled';
   }
 
   function findBill(id){ return bills.find(function(b){ return b.id === id; }); }
   function findEntry(bill, id){ return bill.entries.find(function(e){ return e.id === id; }); }
 
+  function renderFilterTabs(){
+    var counts = {all: bills.length, overdue:0, upcoming:0, settled:0};
+    bills.forEach(function(bill){
+      var s = billOverallStatus(bill);
+      if(s !== 'none') counts[s] = (counts[s]||0) + 1;
+    });
+    var tabs = [
+      {key:'all', label:'All'},
+      {key:'overdue', label:'Overdue'},
+      {key:'upcoming', label:'Upcoming'},
+      {key:'settled', label:'Settled'}
+    ];
+    var wrap = document.getElementById('filter-tabs');
+    wrap.innerHTML = tabs.map(function(t){
+      var c = t.key === 'all' ? counts.all : (counts[t.key]||0);
+      return '<button class="filter-tab' + (activeFilter===t.key?' active':'') + '" role="tab" aria-selected="' + (activeFilter===t.key) + '" data-filter="' + t.key + '">' + t.label + '<span class="count">' + c + '</span></button>';
+    }).join('');
+    wrap.querySelectorAll('[data-filter]').forEach(function(el){
+      el.addEventListener('click', function(){
+        activeFilter = el.getAttribute('data-filter');
+        renderFilterTabs();
+        applyFilters();
+      });
+    });
+  }
+
+  function matchesFilter(bill){
+    if(activeFilter === 'all') return true;
+    return billOverallStatus(bill) === activeFilter;
+  }
+  function matchesSearch(bill){
+    if(!searchTerm) return true;
+    return bill.name.toLowerCase().indexOf(searchTerm.toLowerCase()) !== -1;
+  }
+
+  function applyFilters(){
+    var anyVisible = false;
+    document.querySelectorAll('.bill').forEach(function(el){
+      var id = el.getAttribute('data-bill-id');
+      var bill = findBill(id);
+      if(!bill) return;
+      var show = matchesFilter(bill) && matchesSearch(bill);
+      el.classList.toggle('hidden-by-filter', !show);
+      if(show) anyVisible = true;
+    });
+    var noResults = document.getElementById('no-results');
+    if(!anyVisible && bills.length > 0){
+      if(!noResults){
+        noResults = document.createElement('div');
+        noResults.id = 'no-results';
+        noResults.className = 'empty-state';
+        noResults.innerHTML = '<i class="ti ti-file-off"></i><p><strong>No bills match.</strong></p><p>Try a different search or filter.</p>';
+        document.getElementById('bill-list').appendChild(noResults);
+      }
+    } else if(noResults){
+      noResults.remove();
+    }
+  }
+
   function render(){
     computeStats();
+    renderFilterTabs();
     var list = document.getElementById('bill-list');
     if(bills.length === 0){
-      list.innerHTML = '<div class="empty-state"><p><strong>No bills yet.</strong></p><p>Add your first bill above to start tracking due dates and payments.</p></div>';
+      list.innerHTML = '<div class="empty-state"><i class="ti ti-receipt-2"></i><p><strong>No bills yet.</strong></p><p>Add your first bill above to start tracking due dates and payments.</p></div>';
+    } else {
+      list.innerHTML = bills.map(renderBill).join('');
+      attachListeners();
+      applyFilters();
+    }
+    renderCalendar();
+  }
+
+  function entriesByDate(){
+    var map = {};
+    bills.forEach(function(bill){
+      bill.entries.forEach(function(entry){
+        if(!map[entry.dueDate]) map[entry.dueDate] = [];
+        map[entry.dueDate].push({bill:bill, entry:entry});
+      });
+    });
+    return map;
+  }
+
+  function dayWorstStatus(items){
+    var hasOverdue = items.some(function(it){ return entryStatus(it.entry) === 'overdue'; });
+    if(hasOverdue) return 'overdue';
+    var hasUpcoming = items.some(function(it){ return entryStatus(it.entry) === 'upcoming'; });
+    if(hasUpcoming) return 'upcoming';
+    return 'settled';
+  }
+
+  function renderCalendar(){
+    var monthLabel = new Date(calYear, calMonth, 1).toLocaleDateString('en-US', {month:'long', year:'numeric'});
+    document.getElementById('cal-month-label').textContent = monthLabel;
+
+    var byDate = entriesByDate();
+    var firstOfMonth = new Date(calYear, calMonth, 1);
+    var startWeekday = firstOfMonth.getDay();
+    var daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+    var daysInPrevMonth = new Date(calYear, calMonth, 0).getDate();
+
+    var cells = [];
+    for(var i = startWeekday - 1; i >= 0; i--){
+      cells.push({day: daysInPrevMonth - i, outside:true, iso:null});
+    }
+    for(var d = 1; d <= daysInMonth; d++){
+      var iso = calYear + '-' + String(calMonth+1).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+      cells.push({day:d, outside:false, iso:iso});
+    }
+    while(cells.length % 7 !== 0){
+      cells.push({day: cells.length, outside:true, iso:null});
+    }
+
+    var grid = document.getElementById('cal-grid');
+    grid.innerHTML = cells.map(function(cell){
+      if(cell.outside){
+        return '<div class="cal-day outside"><span class="cal-day-num">' + cell.day + '</span></div>';
+      }
+      var items = byDate[cell.iso] || [];
+      var classes = 'cal-day';
+      if(cell.iso === todayStr) classes += ' is-today';
+      if(cell.iso === selectedDate) classes += ' selected';
+      var dots = '';
+      if(items.length > 0){
+        var byStatus = {};
+        items.forEach(function(it){
+          var s = entryStatus(it.entry);
+          byStatus[s] = (byStatus[s]||0) + 1;
+        });
+        ['overdue','upcoming','settled'].forEach(function(s){
+          if(byStatus[s]) dots += '<span class="dot dot-' + s + '"></span>';
+        });
+      }
+      return '<div class="' + classes + '" data-cal-day="' + cell.iso + '"><span class="cal-day-num">' + cell.day + '</span><span class="cal-dots">' + dots + '</span></div>';
+    }).join('');
+
+    grid.querySelectorAll('[data-cal-day]').forEach(function(el){
+      el.addEventListener('click', function(){
+        selectedDate = el.getAttribute('data-cal-day');
+        renderCalendar();
+      });
+    });
+
+    renderDayPanel(byDate);
+  }
+
+  function renderDayPanel(byDate){
+    var panel = document.getElementById('cal-day-panel');
+    var items = byDate[selectedDate] || [];
+    var d = new Date(selectedDate + 'T00:00:00');
+    var label = d.toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric'});
+    if(items.length === 0){
+      panel.innerHTML = '<p class="cal-day-panel-head">' + label + '</p><p class="empty-note">Nothing due this day.</p>';
       return;
     }
-    list.innerHTML = bills.map(renderBill).join('');
-    attachListeners();
+    var rows = items.map(function(it){
+      var st = entryStatus(it.entry);
+      var right = it.entry.paid
+        ? '<span class="stamp">Paid ' + (it.entry.paidDate ? fmtDate(it.entry.paidDate) : '') + '</span>'
+        : '<span class="badge ' + st + '">' + (st === 'overdue' ? 'Overdue' : 'Upcoming') + '</span>';
+      return '<div class="cal-entry">' +
+        '<span class="cal-entry-bill">' + escapeHtml(it.bill.name) + '</span>' +
+        '<span class="amount">' + fmtMoney(it.entry.amount) + '</span>' +
+        right +
+        '<div class="entry-actions">' +
+          '<button class="icon-btn mark" title="' + (it.entry.paid ? 'Mark unpaid' : 'Mark paid') + '" aria-label="' + (it.entry.paid ? 'Mark unpaid' : 'Mark paid') + '" data-toggle-paid="' + it.bill.id + '|' + it.entry.id + '"><i class="ti ' + (it.entry.paid ? 'ti-rotate-2' : 'ti-check') + '" aria-hidden="true"></i></button>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+    panel.innerHTML = '<p class="cal-day-panel-head">' + label + '</p>' + rows;
+    panel.querySelectorAll('[data-toggle-paid]').forEach(function(el){
+      el.addEventListener('click', function(){
+        var parts = el.getAttribute('data-toggle-paid').split('|');
+        var bill = findBill(parts[0]);
+        var entry = findEntry(bill, parts[1]);
+        entry.paid = !entry.paid;
+        entry.paidDate = entry.paid ? todayStr : null;
+        save();
+        render();
+        toast(entry.paid ? 'Marked as paid' : 'Marked as unpaid');
+      });
+    });
   }
 
   function renderBill(bill){
@@ -457,22 +1037,24 @@
       rows = '<p class="empty-note">No due dates recorded yet. Add one below.</p>';
     }
 
+    var isConfirming = !!confirmingDelete[bill.id];
+
     return '<div class="bill ' + (isOpen ? 'open' : '') + '" data-bill-id="' + bill.id + '">' +
       '<div class="bill-head" data-toggle="' + bill.id + '">' +
-        '<div class="bill-name-row"><span class="chev">&#9656;</span><span class="bill-name">' + escapeHtml(bill.name) + '</span></div>' +
+        '<div class="bill-name-row"><span class="chev"><i class="ti ti-chevron-right" aria-hidden="true"></i></span><span class="bill-name" data-rename="' + bill.id + '" title="Click to rename">' + escapeHtml(bill.name) + '</span></div>' +
         '<div class="bill-right">' + headerRight + '</div>' +
       '</div>' +
-      '<div class="bill-body">' +
+      '<div class="bill-body-wrap"><div class="bill-body-inner"><div class="bill-body">' +
         rows +
         '<div class="add-entry">' +
-          '<input type="date" data-new-date="' + bill.id + '">' +
-          '<input type="number" step="0.01" min="0" placeholder="Amount" data-new-amount="' + bill.id + '">' +
-          '<button class="btn small" data-add-entry="' + bill.id + '">Add due date</button>' +
+          '<input type="date" data-new-date="' + bill.id + '" aria-label="New due date">' +
+          '<input type="number" step="0.01" min="0" placeholder="Amount" data-new-amount="' + bill.id + '" aria-label="New amount">' +
+          '<button class="btn small" data-add-entry="' + bill.id + '"><i class="ti ti-calendar-plus" aria-hidden="true" style="vertical-align:-2px;margin-right:3px;"></i>Add due date</button>' +
         '</div>' +
         '<div class="bill-footer">' +
-          '<button class="btn danger small" data-del-bill="' + bill.id + '">Delete bill</button>' +
+          '<button class="btn danger small' + (isConfirming?' confirming':'') + '" data-del-bill="' + bill.id + '">' + (isConfirming ? 'Confirm delete?' : 'Delete bill') + '</button>' +
         '</div>' +
-      '</div>' +
+      '</div></div></div>' +
     '</div>';
   }
 
@@ -489,8 +1071,8 @@
       '<span class="entry-amount">' + fmtMoney(entry.amount) + '</span>' +
       right +
       '<div class="entry-actions">' +
-        '<button class="icon-btn mark" title="' + (entry.paid ? 'Mark unpaid' : 'Mark paid') + '" data-toggle-paid="' + billId + '|' + entry.id + '">' + (entry.paid ? '&#8635;' : '&#10003;') + '</button>' +
-        '<button class="icon-btn del" title="Delete" data-del-entry="' + billId + '|' + entry.id + '">&#10005;</button>' +
+        '<button class="icon-btn mark" title="' + (entry.paid ? 'Mark unpaid' : 'Mark paid') + '" aria-label="' + (entry.paid ? 'Mark unpaid' : 'Mark paid') + '" data-toggle-paid="' + billId + '|' + entry.id + '"><i class="ti ' + (entry.paid ? 'ti-rotate-2' : 'ti-check') + '" aria-hidden="true"></i></button>' +
+        '<button class="icon-btn del" title="Delete" aria-label="Delete entry" data-del-entry="' + billId + '|' + entry.id + '"><i class="ti ti-x" aria-hidden="true"></i></button>' +
       '</div>' +
     '</div>';
   }
@@ -498,6 +1080,28 @@
   function escapeHtml(s){
     return s.replace(/[&<>"']/g, function(c){
       return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
+  }
+
+  function startRename(nameEl, billId){
+    var bill = findBill(billId);
+    var input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'bill-name-input';
+    input.value = bill.name;
+    nameEl.replaceWith(input);
+    input.focus();
+    input.select();
+    function commit(){
+      var v = input.value.trim();
+      if(v) bill.name = v;
+      save();
+      render();
+    }
+    input.addEventListener('blur', commit);
+    input.addEventListener('keydown', function(e){
+      if(e.key === 'Enter'){ e.preventDefault(); input.blur(); }
+      if(e.key === 'Escape'){ e.preventDefault(); render(); }
     });
   }
 
@@ -509,6 +1113,12 @@
         render();
       });
     });
+    document.querySelectorAll('[data-rename]').forEach(function(el){
+      el.addEventListener('click', function(e){
+        e.stopPropagation();
+        startRename(el, el.getAttribute('data-rename'));
+      });
+    });
     document.querySelectorAll('[data-add-entry]').forEach(function(el){
       el.addEventListener('click', function(e){
         e.stopPropagation();
@@ -518,8 +1128,10 @@
         var date = dateEl.value;
         var amount = parseFloat(amtEl.value);
         if(!date || isNaN(amount) || amount <= 0){
-          amtEl.style.outline = '2px solid var(--red)';
-          setTimeout(function(){ amtEl.style.outline = ''; }, 900);
+          [dateEl, amtEl].forEach(function(inp){
+            inp.style.outline = '2px solid var(--red)';
+            setTimeout(function(){ inp.style.outline = ''; }, 900);
+          });
           return;
         }
         var bill = findBill(billId);
@@ -527,6 +1139,15 @@
         openIds[billId] = true;
         save();
         render();
+        toast('Due date added');
+      });
+    });
+    document.querySelectorAll('[data-new-amount]').forEach(function(el){
+      el.addEventListener('keydown', function(e){
+        if(e.key === 'Enter'){
+          var billId = el.getAttribute('data-new-amount');
+          document.querySelector('[data-add-entry="' + billId + '"]').click();
+        }
       });
     });
     document.querySelectorAll('[data-toggle-paid]').forEach(function(el){
@@ -539,6 +1160,7 @@
         entry.paidDate = entry.paid ? todayStr : null;
         save();
         render();
+        toast(entry.paid ? 'Marked as paid' : 'Marked as unpaid');
       });
     });
     document.querySelectorAll('[data-del-entry]').forEach(function(el){
@@ -549,16 +1171,32 @@
         bill.entries = bill.entries.filter(function(en){ return en.id !== parts[1]; });
         save();
         render();
+        toast('Due date removed');
       });
     });
     document.querySelectorAll('[data-del-bill]').forEach(function(el){
       el.addEventListener('click', function(e){
         e.stopPropagation();
         var id = el.getAttribute('data-del-bill');
+        if(!confirmingDelete[id]){
+          confirmingDelete[id] = true;
+          render();
+          setTimeout(function(){
+            if(confirmingDelete[id]){
+              confirmingDelete[id] = false;
+              render();
+            }
+          }, 3000);
+          return;
+        }
+        var bill = findBill(id);
+        var name = bill ? bill.name : '';
         bills = bills.filter(function(b){ return b.id !== id; });
         delete openIds[id];
+        delete confirmingDelete[id];
         save();
         render();
+        toast(name + ' deleted');
       });
     });
   }
@@ -573,9 +1211,78 @@
     input.value = '';
     save();
     render();
+    toast('Bill added');
   });
   document.getElementById('new-bill-name').addEventListener('keydown', function(e){
     if(e.key === 'Enter') document.getElementById('add-bill-btn').click();
+  });
+  document.getElementById('search-bills').addEventListener('input', function(e){
+    searchTerm = e.target.value;
+    applyFilters();
+  });
+
+  document.querySelectorAll('#view-tabs [data-view]').forEach(function(el){
+    el.addEventListener('click', function(){
+      currentView = el.getAttribute('data-view');
+      document.querySelectorAll('#view-tabs .view-tab').forEach(function(t){
+        t.classList.toggle('active', t === el);
+      });
+      document.getElementById('list-view').style.display = currentView === 'list' ? '' : 'none';
+      document.getElementById('list-controls').style.display = currentView === 'list' ? '' : 'none';
+      document.getElementById('calendar-view').style.display = currentView === 'calendar' ? '' : 'none';
+      if(currentView === 'calendar') renderCalendar();
+    });
+  });
+  document.getElementById('cal-prev').addEventListener('click', function(){
+    calMonth--;
+    if(calMonth < 0){ calMonth = 11; calYear--; }
+    renderCalendar();
+  });
+  document.getElementById('cal-next').addEventListener('click', function(){
+    calMonth++;
+    if(calMonth > 11){ calMonth = 0; calYear++; }
+    renderCalendar();
+  });
+  document.getElementById('cal-today-btn').addEventListener('click', function(){
+    calYear = todayDate.getFullYear();
+    calMonth = todayDate.getMonth();
+    selectedDate = todayStr;
+    renderCalendar();
+  });
+
+  document.getElementById('export-btn').addEventListener('click', function(){
+    var blob = new Blob([JSON.stringify(bills, null, 2)], {type:'application/json'});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'bills-backup-' + todayStr + '.json';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    toast('Backup downloaded');
+  });
+  document.getElementById('import-btn').addEventListener('click', function(){
+    document.getElementById('import-file').click();
+  });
+  document.getElementById('import-file').addEventListener('change', function(e){
+    var file = e.target.files[0];
+    if(!file) return;
+    var reader = new FileReader();
+    reader.onload = function(evt){
+      try{
+        var parsed = JSON.parse(evt.target.result);
+        if(!Array.isArray(parsed)) throw new Error('bad format');
+        bills = parsed;
+        save();
+        render();
+        toast('Backup restored');
+      }catch(err){
+        toast('That file could not be read as a backup');
+      }
+      e.target.value = '';
+    };
+    reader.readAsText(file);
   });
 
   load();
