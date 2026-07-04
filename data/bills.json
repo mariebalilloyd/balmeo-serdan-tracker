@@ -127,6 +127,14 @@
   {
     "id": "ua7gldcf",
     "name": "MAAM ABY NEW",
-    "entries": []
+    "entries": [
+      {
+        "id": "fpublovf",
+        "dueDate": "2026-07-15",
+        "amount": 7500,
+        "paid": false,
+        "paidDate": null
+      }
+    ]
   }
 ]
