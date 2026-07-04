@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bills ledger</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F6F1E4;
+    --paper-line:#E4DBC4;
+    --ink:#1E2B28;
+    --ink-soft:#5B6560;
+    --teal:#0F5C52;
+    --teal-deep:#0A3F39;
+    --teal-pale:#DCEAE6;
+    --gold:#B4791A;
+    --gold-pale:#F5E6C8;
+    --red:#9C3B2E;
+    --red-pale:#F1DCD6;
+    --stamp:#8C2F22;
+    --line:#D8CDAF;
+    --radius:10px;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;}
+  #ledger-app{
+    font-family:'Inter',sans-serif;
+    background:var(--paper);
+    color:var(--ink);
+    min-height:100vh;
+    padding:0 0 4rem;
+  }
+  .cover{
+    background:var(--teal-deep);
+    background-image:linear-gradient(180deg,var(--teal) 0%,var(--teal-deep) 100%);
+    color:#F3EFE1;
+    padding:2.2rem 1.75rem 1.6rem;
+    border-radius:0 0 22px 22px;
+  }
+  .cover-eyebrow{
+    font-size:12px;
+    letter-spacing:.12em;
+    text-transform:uppercase;
+    color:#B7D9CF;
+    margin:0 0 .35rem;
+    font-weight:500;
+  }
+  .cover h1{
+    font-family:'Fraunces',serif;
+    font-weight:500;
+    font-size:28px;
+    margin:0 0 1.1rem;
+    letter-spacing:.01em;
+  }
+  .stats{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:10px;
+  }
+  .stat{
+    background:rgba(255,255,255,0.08);
+    border:1px solid rgba(255,255,255,0.15);
+    border-radius:var(--radius);
+    padding:.7rem .8rem;
+  }
+  .stat-label{
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:.08em;
+    color:#B7D9CF;
+    margin:0 0 .3rem;
+  }
+  .stat-value{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:17px;
+    font-weight:600;
+    color:#F3EFE1;
+  }
+  .stat-value.warn{color:#F0C48A;}
+  .stat-value.bad{color:#F0A492;}
+
+  .page{
+    max-width:680px;
+    margin:0 auto;
+    padding:0 1.25rem;
+  }
+
+  .toolbar{
+    display:flex;
+    gap:.6rem;
+    align-items:center;
+    margin:1.5rem 0 1rem;
+  }
+  .toolbar input[type=text]{
+    flex:1;
+  }
+  input[type=text],input[type=number],input[type=date]{
+    font-family:'Inter',sans-serif;
+    font-size:14px;
+    padding:.5rem .65rem;
+    border:1px solid var(--line);
+    border-radius:8px;
+    background:#FFFDF7;
+    color:var(--ink);
+  }
+  input:focus{outline:2px solid var(--teal);outline-offset:1px;}
+  button{
+    font-family:'Inter',sans-serif;
+    cursor:pointer;
+  }
+  .btn{
+    border:1px solid var(--teal);
+    background:var(--teal);
+    color:#fff;
+    font-size:14px;
+    font-weight:500;
+    padding:.5rem .9rem;
+    border-radius:8px;
+  }
+  .btn:hover{background:var(--teal-deep);}
+  .btn.ghost{
+    background:transparent;
+    color:var(--teal);
+  }
+  .btn.ghost:hover{background:var(--teal-pale);}
+  .btn.small{
+    padding:.3rem .6rem;
+    font-size:12.5px;
+  }
+  .btn.danger{
+    border-color:var(--red);
+    color:var(--red);
+    background:transparent;
+  }
+  .btn.danger:hover{background:var(--red-pale);}
+
+  .bill{
+    background:#FFFDF7;
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    margin-bottom:10px;
+    overflow:hidden;
+  }
+  .bill-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:.75rem;
+    padding:.85rem 1rem;
+    cursor:pointer;
+  }
+  .bill-head:hover{background:#FBF7EC;}
+  .bill-name-row{
+    display:flex;
+    align-items:center;
+    gap:.6rem;
+    min-width:0;
+  }
+  .chev{
+    color:var(--ink-soft);
+    font-size:12px;
+    transition:transform .15s ease;
+    flex-shrink:0;
+  }
+  .bill.open .chev{transform:rotate(90deg);}
+  .bill-name{
+    font-family:'Fraunces',serif;
+    font-size:16.5px;
+    font-weight:500;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .bill-right{
+    display:flex;
+    align-items:center;
+    gap:.6rem;
+    flex-shrink:0;
+  }
+  .amount{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:14.5px;
+    font-weight:500;
+  }
+  .badge{
+    font-size:11px;
+    font-weight:600;
+    letter-spacing:.03em;
+    padding:.2rem .55rem;
+    border-radius:999px;
+    text-transform:uppercase;
+    white-space:nowrap;
+  }
+  .badge.upcoming{background:var(--gold-pale);color:var(--gold);}
+  .badge.overdue{background:var(--red-pale);color:var(--red);}
+  .badge.settled{background:var(--teal-pale);color:var(--teal-deep);}
+
+  .bill-body{
+    display:none;
+    border-top:1px dashed var(--line);
+    padding:.75rem 1rem 1rem;
+  }
+  .bill.open .bill-body{display:block;}
+
+  .entry-row{
+    display:flex;
+    align-items:center;
+    gap:.5rem;
+    padding:.5rem 0;
+    border-bottom:1px solid var(--paper-line);
+  }
+  .entry-row:last-of-type{border-bottom:none;}
+  .entry-date{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:13px;
+    color:var(--ink-soft);
+    width:78px;
+    flex-shrink:0;
+  }
+  .entry-amount{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:14px;
+    font-weight:500;
+    flex:1;
+  }
+  .stamp{
+    display:inline-block;
+    font-family:'Fraunces',serif;
+    font-weight:600;
+    font-size:11px;
+    letter-spacing:.1em;
+    color:var(--stamp);
+    border:2px double var(--stamp);
+    border-radius:4px;
+    padding:.1rem .4rem;
+    transform:rotate(-6deg);
+    text-transform:uppercase;
+    opacity:.85;
+    white-space:nowrap;
+  }
+  .entry-actions{
+    display:flex;
+    gap:.4rem;
+    flex-shrink:0;
+  }
+  .icon-btn{
+    border:1px solid var(--line);
+    background:#fff;
+    border-radius:6px;
+    width:28px;
+    height:28px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color:var(--ink-soft);
+    font-size:13px;
+  }
+  .icon-btn:hover{background:var(--paper-line);}
+  .icon-btn.mark:hover{color:var(--teal);border-color:var(--teal);}
+  .icon-btn.del:hover{color:var(--red);border-color:var(--red);}
+
+  .add-entry{
+    display:flex;
+    gap:.5rem;
+    margin-top:.75rem;
+    align-items:center;
+  }
+  .add-entry input[type=date]{width:135px;}
+  .add-entry input[type=number]{width:110px;}
+  .bill-footer{
+    display:flex;
+    justify-content:flex-end;
+    margin-top:.6rem;
+  }
+  .empty-note{
+    font-size:13px;
+    color:var(--ink-soft);
+    font-style:italic;
+    padding:.4rem 0;
+  }
+  .empty-state{
+    text-align:center;
+    padding:3rem 1rem;
+    color:var(--ink-soft);
+  }
+  .empty-state p{margin:.3rem 0;}
+  .sr-only{
+    position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+    overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
+  }
+  @media (max-width:420px){
+    .stats{grid-template-columns:1fr 1fr;}
+    .bill-name{font-size:15px;}
+  }
+</style>
+</head>
+<body>
+<div id="ledger-app">
+  <h2 class="sr-only">Interactive bills ledger tracking due dates, amounts and payment status for household bills.</h2>
+  <div class="cover">
+    <p class="cover-eyebrow">Household ledger</p>
+    <h1>Bills tracker</h1>
+    <div class="stats">
+      <div class="stat">
+        <p class="stat-label">Owed now</p>
+        <p class="stat-value" id="stat-due">₱0</p>
+      </div>
+      <div class="stat">
+        <p class="stat-label">Overdue</p>
+        <p class="stat-value bad" id="stat-overdue">0</p>
+      </div>
+      <div class="stat">
+        <p class="stat-label">Paid, last 30d</p>
+        <p class="stat-value" id="stat-paid">₱0</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="page">
+    <div class="toolbar">
+      <input type="text" id="new-bill-name" placeholder="Add a bill, e.g. Meralco Serdan">
+      <button class="btn" id="add-bill-btn">Add bill</button>
+    </div>
+    <div id="bill-list"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var STORAGE_KEY = 'bills';
+  var openIds = {};
+  var bills = [];
+  var todayStr = new Date().toISOString().slice(0,10);
+
+  function uid(){ return Math.random().toString(36).slice(2,10); }
+
+  function seedData(){
+    function b(name, entries){ return {id:uid(), name:name, entries:entries}; }
+    function e(due, amount, paidDate){ return {id:uid(), dueDate:due, amount:amount, paid: !!paidDate, paidDate: paidDate || null}; }
+    return [
+      b('Maya Credit', [ e('2026-05-30',6573.10,'2026-05-29'), e('2026-06-30',6573.10,'2026-06-30') ]),
+      b('EWBC', [ e('2026-05-30',40454.17,'2026-05-31'), e('2026-06-15',40512.04,'2026-06-15') ]),
+      b('Atome', [ e('2026-06-15',4623.04,'2026-06-19'), e('2026-07-15',1056.83,null), e('2026-08-15',1056.86,null) ]),
+      b('Paydaynow', [ e('2026-05-30',18000.00,'2026-05-29') ]),
+      b('Ft Lending', [ e('2026-05-30',1648.00,'2026-05-29'), e('2026-06-15',834.00,'2026-06-15'), e('2026-06-30',838.00,'2026-07-02'), e('2026-07-15',362.00,null) ]),
+      b('Meralco Serdan', [ e('2026-05-30',2903.94,'2026-05-31') ]),
+      b('Water Serdan', []),
+      b('Meralco Balmeo', [ e('2026-05-30',6226.44,'2026-05-29'), e('2026-07-15',6200.00,null) ]),
+      b('Water Balmeo', [ e('2026-05-30',300.00,'2026-05-29') ]),
+      b('Converge', [ e('2026-05-15',800.00,'2026-05-15'), e('2026-06-15',800.00,'2026-06-15') ]),
+      b('PLDT', [ e('2026-05-17',1299.00,'2026-05-17'), e('2026-06-15',1299.00,'2026-06-23'), e('2026-07-15',1299.00,null) ]),
+      b('House rental', [ e('2026-06-15',4000.00,'2026-06-16'), e('2026-07-15',4000.00,null) ])
+    ];
+  }
+
+  function save(){
+    try{
+      window.storage.set(STORAGE_KEY, JSON.stringify(bills), false).catch(function(err){
+        console.error('Storage save failed', err);
+      });
+    }catch(err){ console.error('Storage error', err); }
+  }
+
+  function load(){
+    window.storage.get(STORAGE_KEY, false).then(function(res){
+      if(res && res.value){
+        try{ bills = JSON.parse(res.value); }catch(e){ bills = seedData(); }
+      } else {
+        bills = seedData();
+        save();
+      }
+      render();
+    }).catch(function(){
+      bills = seedData();
+      render();
+    });
+  }
+
+  function fmtMoney(n){
+    var v = Math.round((n + Number.EPSILON) * 100) / 100;
+    return '₱' + v.toLocaleString('en-PH', {minimumFractionDigits:2, maximumFractionDigits:2});
+  }
+
+  function fmtDate(iso){
+    if(!iso) return '';
+    var d = new Date(iso + 'T00:00:00');
+    return d.toLocaleDateString('en-US', {month:'short', day:'numeric'});
+  }
+
+  function entryStatus(entry){
+    if(entry.paid) return 'settled';
+    if(entry.dueDate < todayStr) return 'overdue';
+    return 'upcoming';
+  }
+
+  function nextEntry(bill){
+    var unpaid = bill.entries.filter(function(e){ return !e.paid; });
+    if(unpaid.length === 0) return null;
+    unpaid.sort(function(a,b){ return a.dueDate < b.dueDate ? -1 : 1; });
+    return unpaid[0];
+  }
+
+  function computeStats(){
+    var owed = 0, overdueCount = 0, paidRecent = 0;
+    var cutoff = new Date(todayStr + 'T00:00:00');
+    cutoff.setDate(cutoff.getDate() - 30);
+    bills.forEach(function(bill){
+      bill.entries.forEach(function(entry){
+        if(!entry.paid){
+          owed += entry.amount;
+          if(entry.dueDate < todayStr) overdueCount++;
+        } else if(entry.paidDate){
+          var pd = new Date(entry.paidDate + 'T00:00:00');
+          if(pd >= cutoff) paidRecent += entry.amount;
+        }
+      });
+    });
+    document.getElementById('stat-due').textContent = fmtMoney(owed);
+    document.getElementById('stat-overdue').textContent = overdueCount;
+    document.getElementById('stat-overdue').className = 'stat-value' + (overdueCount > 0 ? ' bad' : '');
+    document.getElementById('stat-paid').textContent = fmtMoney(paidRecent);
+  }
+
+  function findBill(id){ return bills.find(function(b){ return b.id === id; }); }
+  function findEntry(bill, id){ return bill.entries.find(function(e){ return e.id === id; }); }
+
+  function render(){
+    computeStats();
+    var list = document.getElementById('bill-list');
+    if(bills.length === 0){
+      list.innerHTML = '<div class="empty-state"><p><strong>No bills yet.</strong></p><p>Add your first bill above to start tracking due dates and payments.</p></div>';
+      return;
+    }
+    list.innerHTML = bills.map(renderBill).join('');
+    attachListeners();
+  }
+
+  function renderBill(bill){
+    var isOpen = !!openIds[bill.id];
+    var next = nextEntry(bill);
+    var headerRight;
+    if(next){
+      var st = entryStatus(next);
+      headerRight = '<span class="amount">' + fmtMoney(next.amount) + '</span>' +
+        '<span class="badge ' + st + '">' + (st === 'overdue' ? 'Overdue' : 'Due ' + fmtDate(next.dueDate)) + '</span>';
+    } else if(bill.entries.length > 0){
+      headerRight = '<span class="badge settled">All settled</span>';
+    } else {
+      headerRight = '<span class="empty-note">No entries</span>';
+    }
+
+    var sorted = bill.entries.slice().sort(function(a,b){ return a.dueDate < b.dueDate ? -1 : 1; });
+    var rows = sorted.map(function(entry){ return renderEntry(bill.id, entry); }).join('');
+    if(sorted.length === 0){
+      rows = '<p class="empty-note">No due dates recorded yet. Add one below.</p>';
+    }
+
+    return '<div class="bill ' + (isOpen ? 'open' : '') + '" data-bill-id="' + bill.id + '">' +
+      '<div class="bill-head" data-toggle="' + bill.id + '">' +
+        '<div class="bill-name-row"><span class="chev">&#9656;</span><span class="bill-name">' + escapeHtml(bill.name) + '</span></div>' +
+        '<div class="bill-right">' + headerRight + '</div>' +
+      '</div>' +
+      '<div class="bill-body">' +
+        rows +
+        '<div class="add-entry">' +
+          '<input type="date" data-new-date="' + bill.id + '">' +
+          '<input type="number" step="0.01" min="0" placeholder="Amount" data-new-amount="' + bill.id + '">' +
+          '<button class="btn small" data-add-entry="' + bill.id + '">Add due date</button>' +
+        '</div>' +
+        '<div class="bill-footer">' +
+          '<button class="btn danger small" data-del-bill="' + bill.id + '">Delete bill</button>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  }
+
+  function renderEntry(billId, entry){
+    var st = entryStatus(entry);
+    var right;
+    if(entry.paid){
+      right = '<span class="stamp">Paid ' + (entry.paidDate ? fmtDate(entry.paidDate) : '') + '</span>';
+    } else {
+      right = '<span class="badge ' + st + '">' + (st === 'overdue' ? 'Overdue' : 'Upcoming') + '</span>';
+    }
+    return '<div class="entry-row">' +
+      '<span class="entry-date">' + fmtDate(entry.dueDate) + '</span>' +
+      '<span class="entry-amount">' + fmtMoney(entry.amount) + '</span>' +
+      right +
+      '<div class="entry-actions">' +
+        '<button class="icon-btn mark" title="' + (entry.paid ? 'Mark unpaid' : 'Mark paid') + '" data-toggle-paid="' + billId + '|' + entry.id + '">' + (entry.paid ? '&#8635;' : '&#10003;') + '</button>' +
+        '<button class="icon-btn del" title="Delete" data-del-entry="' + billId + '|' + entry.id + '">&#10005;</button>' +
+      '</div>' +
+    '</div>';
+  }
+
+  function escapeHtml(s){
+    return s.replace(/[&<>"']/g, function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
+  }
+
+  function attachListeners(){
+    document.querySelectorAll('[data-toggle]').forEach(function(el){
+      el.addEventListener('click', function(){
+        var id = el.getAttribute('data-toggle');
+        openIds[id] = !openIds[id];
+        render();
+      });
+    });
+    document.querySelectorAll('[data-add-entry]').forEach(function(el){
+      el.addEventListener('click', function(e){
+        e.stopPropagation();
+        var billId = el.getAttribute('data-add-entry');
+        var dateEl = document.querySelector('[data-new-date="' + billId + '"]');
+        var amtEl = document.querySelector('[data-new-amount="' + billId + '"]');
+        var date = dateEl.value;
+        var amount = parseFloat(amtEl.value);
+        if(!date || isNaN(amount) || amount <= 0){
+          amtEl.style.outline = '2px solid var(--red)';
+          setTimeout(function(){ amtEl.style.outline = ''; }, 900);
+          return;
+        }
+        var bill = findBill(billId);
+        bill.entries.push({id:uid(), dueDate:date, amount:amount, paid:false, paidDate:null});
+        openIds[billId] = true;
+        save();
+        render();
+      });
+    });
+    document.querySelectorAll('[data-toggle-paid]').forEach(function(el){
+      el.addEventListener('click', function(e){
+        e.stopPropagation();
+        var parts = el.getAttribute('data-toggle-paid').split('|');
+        var bill = findBill(parts[0]);
+        var entry = findEntry(bill, parts[1]);
+        entry.paid = !entry.paid;
+        entry.paidDate = entry.paid ? todayStr : null;
+        save();
+        render();
+      });
+    });
+    document.querySelectorAll('[data-del-entry]').forEach(function(el){
+      el.addEventListener('click', function(e){
+        e.stopPropagation();
+        var parts = el.getAttribute('data-del-entry').split('|');
+        var bill = findBill(parts[0]);
+        bill.entries = bill.entries.filter(function(en){ return en.id !== parts[1]; });
+        save();
+        render();
+      });
+    });
+    document.querySelectorAll('[data-del-bill]').forEach(function(el){
+      el.addEventListener('click', function(e){
+        e.stopPropagation();
+        var id = el.getAttribute('data-del-bill');
+        bills = bills.filter(function(b){ return b.id !== id; });
+        delete openIds[id];
+        save();
+        render();
+      });
+    });
+  }
+
+  document.getElementById('add-bill-btn').addEventListener('click', function(){
+    var input = document.getElementById('new-bill-name');
+    var name = input.value.trim();
+    if(!name) return;
+    var newBill = {id: uid(), name: name, entries: []};
+    bills.push(newBill);
+    openIds[newBill.id] = true;
+    input.value = '';
+    save();
+    render();
+  });
+  document.getElementById('new-bill-name').addEventListener('keydown', function(e){
+    if(e.key === 'Enter') document.getElementById('add-bill-btn').click();
+  });
+
+  load();
+})();
+</script>
+</body>
+</html>
