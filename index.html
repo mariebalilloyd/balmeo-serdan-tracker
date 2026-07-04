@@ -150,6 +150,68 @@
     margin-bottom:.7rem;
     flex-wrap:wrap;
   }
+  .btn.ghost.danger{
+    color:var(--red);
+    border-color:var(--red);
+  }
+  .btn.ghost.danger:hover{background:var(--red-pale);}
+  .sync-panel{
+    background:#FFFDF7;
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:.9rem 1rem;
+    margin-bottom:.9rem;
+  }
+  .sync-panel-title{
+    font-family:'Fraunces',serif;
+    font-size:15px;
+    font-weight:500;
+    margin:0 0 .3rem;
+  }
+  .sync-panel-note{
+    font-size:12.5px;
+    color:var(--ink-soft);
+    margin:0 0 .8rem;
+    line-height:1.5;
+  }
+  .sync-field{
+    display:flex;
+    flex-direction:column;
+    gap:.25rem;
+    margin-bottom:.6rem;
+  }
+  .sync-field label{
+    font-size:12px;
+    font-weight:500;
+    color:var(--ink-soft);
+  }
+  .sync-field input{width:100%;}
+  .sync-panel-hint{
+    font-size:11.5px;
+    color:var(--ink-soft);
+    line-height:1.5;
+    margin:.2rem 0 .8rem;
+  }
+  .sync-panel-actions{
+    display:flex;
+    gap:.5rem;
+  }
+  .sync-status{
+    font-size:12.5px;
+    margin:.6rem 0 0;
+  }
+  .sync-status.ok{color:var(--teal);}
+  .sync-status.err{color:var(--red);}
+  .sync-dot{
+    display:inline-block;
+    width:7px;
+    height:7px;
+    border-radius:50%;
+    margin-right:5px;
+    vertical-align:1px;
+  }
+  .sync-dot.on{background:var(--teal);}
+  .sync-dot.off{background:var(--ink-soft);}
   .cal-nav{
     display:flex;
     align-items:center;
@@ -652,9 +714,36 @@
         <button class="view-tab" role="tab" data-view="calendar"><i class="ti ti-calendar" aria-hidden="true"></i>Calendar</button>
       </div>
       <div class="backup-row">
+        <button class="btn ghost small" id="sync-btn"><i class="ti ti-brand-github" aria-hidden="true" style="vertical-align:-2px;margin-right:3px;"></i><span id="sync-btn-label">Set up autosave</span></button>
         <button class="btn ghost small" id="export-btn"><i class="ti ti-download" aria-hidden="true" style="vertical-align:-2px;margin-right:3px;"></i>Export backup</button>
         <button class="btn ghost small" id="import-btn"><i class="ti ti-upload" aria-hidden="true" style="vertical-align:-2px;margin-right:3px;"></i>Import backup</button>
         <input type="file" id="import-file" accept="application/json" style="display:none;">
+      </div>
+      <div class="sync-panel" id="sync-panel" style="display:none;">
+        <p class="sync-panel-title">Sync to GitHub</p>
+        <p class="sync-panel-note">Stores your bills as a JSON file in a repo, so every browser and device that connects sees the same live data.</p>
+        <div class="sync-field">
+          <label for="gh-owner">GitHub username</label>
+          <input type="text" id="gh-owner" placeholder="mariebalilloyd">
+        </div>
+        <div class="sync-field">
+          <label for="gh-repo">Repository name</label>
+          <input type="text" id="gh-repo" placeholder="balmeo-serdan-tracker">
+        </div>
+        <div class="sync-field">
+          <label for="gh-path">Data file path</label>
+          <input type="text" id="gh-path" placeholder="data/bills.json">
+        </div>
+        <div class="sync-field">
+          <label for="gh-token">Personal access token</label>
+          <input type="password" id="gh-token" placeholder="ghp_...">
+        </div>
+        <p class="sync-panel-hint">Create one at GitHub &rarr; Settings &rarr; Developer settings &rarr; Personal access tokens &rarr; Tokens (classic) &rarr; check the "repo" box. Keep it private, it's stored only in this browser.</p>
+        <div class="sync-panel-actions">
+          <button class="btn small" id="gh-connect-btn">Connect</button>
+          <button class="btn ghost small danger" id="gh-disconnect-btn" style="display:none;">Disconnect</button>
+        </div>
+        <p class="sync-status" id="sync-status"></p>
       </div>
       <div id="list-controls">
         <div class="controls-row">
@@ -743,16 +832,149 @@
     setTimeout(function(){ el.remove(); }, 2000);
   }
 
+  var GH_CFG_KEY = 'bills-gh-config';
+  var ghSha = null;
+  var ghSyncing = false;
+
+  function ghGetConfig(){
+    try{
+      var raw = localStorage.getItem(GH_CFG_KEY);
+      if(!raw) return null;
+      var cfg = JSON.parse(raw);
+      if(cfg && cfg.owner && cfg.repo && cfg.path && cfg.token) return cfg;
+      return null;
+    }catch(e){ return null; }
+  }
+  function ghSetConfig(cfg){
+    localStorage.setItem(GH_CFG_KEY, JSON.stringify(cfg));
+  }
+  function ghClearConfig(){
+    localStorage.removeItem(GH_CFG_KEY);
+    ghSha = null;
+  }
+
+  function b64EncodeUnicode(str){
+    return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function(match, p1){
+      return String.fromCharCode('0x' + p1);
+    }));
+  }
+  function b64DecodeUnicode(str){
+    return decodeURIComponent(atob(str).split('').map(function(c){
+      return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(''));
+  }
+
+  function ghApiUrl(cfg){
+    return 'https://api.github.com/repos/' + cfg.owner + '/' + cfg.repo + '/contents/' + cfg.path;
+  }
+
+  function ghLoad(cfg){
+    return fetch(ghApiUrl(cfg) + '?ref=' + encodeURIComponent(cfg.branch || 'main'), {
+      headers: {
+        'Authorization': 'token ' + cfg.token,
+        'Accept': 'application/vnd.github+json'
+      }
+    }).then(function(res){
+      if(res.status === 404){
+        ghSha = null;
+        return null;
+      }
+      if(!res.ok) throw new Error('GitHub load failed (' + res.status + ')');
+      return res.json().then(function(data){
+        ghSha = data.sha;
+        var content = b64DecodeUnicode(data.content.replace(/\n/g, ''));
+        return JSON.parse(content);
+      });
+    });
+  }
+
+  function ghSave(billsData){
+    var cfg = ghGetConfig();
+    if(!cfg) return Promise.resolve(false);
+    ghSyncing = true;
+    updateSyncStatusIndicator();
+    var body = {
+      message: 'Update bills data',
+      content: b64EncodeUnicode(JSON.stringify(billsData, null, 2)),
+      branch: cfg.branch || 'main'
+    };
+    if(ghSha) body.sha = ghSha;
+    return fetch(ghApiUrl(cfg), {
+      method: 'PUT',
+      headers: {
+        'Authorization': 'token ' + cfg.token,
+        'Accept': 'application/vnd.github+json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(body)
+    }).then(function(res){
+      if(res.status === 409){
+        return ghLoad(cfg).then(function(){ return ghSave(billsData); });
+      }
+      if(!res.ok){
+        return res.json().catch(function(){ return {}; }).then(function(errBody){
+          throw new Error((errBody && errBody.message) || ('GitHub save failed (' + res.status + ')'));
+        });
+      }
+      return res.json().then(function(data){
+        ghSha = data.content.sha;
+        return true;
+      });
+    }).finally(function(){
+      ghSyncing = false;
+      updateSyncStatusIndicator();
+    });
+  }
+
+  function updateSyncStatusIndicator(){
+    var label = document.getElementById('sync-btn-label');
+    if(!label) return;
+    var cfg = ghGetConfig();
+    if(cfg){
+      label.innerHTML = '<span class="sync-dot ' + (ghSyncing ? 'off' : 'on') + '"></span>' + (ghSyncing ? 'Saving to GitHub…' : 'Synced to GitHub');
+    } else {
+      label.textContent = 'Set up autosave';
+    }
+  }
+
   function save(){
     try{
       localStorage.setItem(STORAGE_KEY, JSON.stringify(bills));
     }catch(err){
       console.error('Storage error', err);
-      toast('Could not save changes');
+    }
+    var cfg = ghGetConfig();
+    if(cfg){
+      ghSave(bills).catch(function(err){
+        console.error('GitHub save error', err);
+        toast('Could not sync to GitHub: ' + err.message);
+      });
     }
   }
 
   function load(){
+    var cfg = ghGetConfig();
+    if(cfg){
+      updateSyncStatusIndicator();
+      ghLoad(cfg).then(function(data){
+        if(data && Array.isArray(data)){
+          bills = data;
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(bills));
+        } else {
+          var raw = localStorage.getItem(STORAGE_KEY);
+          bills = raw ? JSON.parse(raw) : seedData();
+          save();
+        }
+        render();
+      }).catch(function(err){
+        console.error('GitHub load error', err);
+        toast('Could not reach GitHub, showing local copy');
+        var raw = localStorage.getItem(STORAGE_KEY);
+        try{ bills = raw ? JSON.parse(raw) : seedData(); }catch(e){ bills = seedData(); }
+        render();
+      });
+      return;
+    }
     try{
       var raw = localStorage.getItem(STORAGE_KEY);
       if(raw){
@@ -1283,6 +1505,72 @@
       e.target.value = '';
     };
     reader.readAsText(file);
+  });
+
+  document.getElementById('sync-btn').addEventListener('click', function(){
+    var panel = document.getElementById('sync-panel');
+    var isOpen = panel.style.display !== 'none';
+    panel.style.display = isOpen ? 'none' : 'block';
+    if(!isOpen){
+      var cfg = ghGetConfig();
+      document.getElementById('gh-owner').value = cfg ? cfg.owner : '';
+      document.getElementById('gh-repo').value = cfg ? cfg.repo : '';
+      document.getElementById('gh-path').value = cfg ? cfg.path : 'data/bills.json';
+      document.getElementById('gh-token').value = cfg ? cfg.token : '';
+      document.getElementById('gh-disconnect-btn').style.display = cfg ? '' : 'none';
+      document.getElementById('gh-connect-btn').textContent = cfg ? 'Save changes' : 'Connect';
+      document.getElementById('sync-status').textContent = '';
+      document.getElementById('sync-status').className = 'sync-status';
+    }
+  });
+
+  document.getElementById('gh-connect-btn').addEventListener('click', function(){
+    var owner = document.getElementById('gh-owner').value.trim();
+    var repo = document.getElementById('gh-repo').value.trim();
+    var path = document.getElementById('gh-path').value.trim() || 'data/bills.json';
+    var token = document.getElementById('gh-token').value.trim();
+    var statusEl = document.getElementById('sync-status');
+    if(!owner || !repo || !token){
+      statusEl.textContent = 'Fill in your username, repository, and token.';
+      statusEl.className = 'sync-status err';
+      return;
+    }
+    var cfg = {owner:owner, repo:repo, path:path, token:token, branch:'main'};
+    statusEl.textContent = 'Connecting…';
+    statusEl.className = 'sync-status';
+    ghSha = null;
+    ghLoad(cfg).then(function(data){
+      ghSetConfig(cfg);
+      if(data && Array.isArray(data) && data.length > 0){
+        bills = data;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(bills));
+        render();
+        statusEl.textContent = 'Connected. Loaded existing data from GitHub.';
+      } else {
+        return ghSave(bills).then(function(){
+          statusEl.textContent = 'Connected. Your current bills were saved to GitHub.';
+        });
+      }
+    }).then(function(){
+      statusEl.className = 'sync-status ok';
+      document.getElementById('gh-disconnect-btn').style.display = '';
+      document.getElementById('gh-connect-btn').textContent = 'Save changes';
+      updateSyncStatusIndicator();
+      toast('GitHub sync connected');
+    }).catch(function(err){
+      statusEl.textContent = 'Could not connect: ' + err.message;
+      statusEl.className = 'sync-status err';
+    });
+  });
+
+  document.getElementById('gh-disconnect-btn').addEventListener('click', function(){
+    ghClearConfig();
+    document.getElementById('gh-disconnect-btn').style.display = 'none';
+    document.getElementById('gh-connect-btn').textContent = 'Connect';
+    document.getElementById('sync-status').textContent = 'Disconnected. Saving locally to this browser only.';
+    document.getElementById('sync-status').className = 'sync-status';
+    updateSyncStatusIndicator();
+    toast('GitHub sync disconnected');
   });
 
   load();
