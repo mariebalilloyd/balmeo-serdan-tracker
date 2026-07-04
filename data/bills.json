@@ -1,0 +1,122 @@
+[
+  {
+    "id": "ool0i5k6",
+    "name": "Water Balmeo",
+    "entries": [
+      {
+        "id": "rfnhn217",
+        "dueDate": "2026-05-30",
+        "amount": 300,
+        "paid": true,
+        "paidDate": "2026-05-29"
+      }
+    ]
+  },
+  {
+    "id": "hrdfizcc",
+    "name": "Converge",
+    "entries": [
+      {
+        "id": "h019jmk3",
+        "dueDate": "2026-05-15",
+        "amount": 800,
+        "paid": true,
+        "paidDate": "2026-05-15"
+      },
+      {
+        "id": "9ze38c3k",
+        "dueDate": "2026-06-15",
+        "amount": 800,
+        "paid": true,
+        "paidDate": "2026-06-15"
+      }
+    ]
+  },
+  {
+    "id": "9yxbnnj0",
+    "name": "PLDT",
+    "entries": [
+      {
+        "id": "z1i10u1c",
+        "dueDate": "2026-05-17",
+        "amount": 1299,
+        "paid": true,
+        "paidDate": "2026-05-17"
+      },
+      {
+        "id": "7wkvmnzs",
+        "dueDate": "2026-06-15",
+        "amount": 1299,
+        "paid": true,
+        "paidDate": "2026-06-23"
+      },
+      {
+        "id": "h2bj7mln",
+        "dueDate": "2026-07-15",
+        "amount": 1299,
+        "paid": false,
+        "paidDate": null
+      }
+    ]
+  },
+  {
+    "id": "xwl89xh9",
+    "name": "House rental",
+    "entries": [
+      {
+        "id": "fdcqq7h8",
+        "dueDate": "2026-06-15",
+        "amount": 4000,
+        "paid": true,
+        "paidDate": "2026-06-16"
+      },
+      {
+        "id": "u8pz5jf2",
+        "dueDate": "2026-07-15",
+        "amount": 4000,
+        "paid": false,
+        "paidDate": null
+      }
+    ]
+  },
+  {
+    "id": "ddvh0a83",
+    "name": "Maam Grace",
+    "entries": [
+      {
+        "id": "4s3anrie",
+        "dueDate": "2026-07-15",
+        "amount": 7500,
+        "paid": false,
+        "paidDate": null
+      },
+      {
+        "id": "b56f3qti",
+        "dueDate": "2026-07-30",
+        "amount": 7500,
+        "paid": false,
+        "paidDate": null
+      }
+    ]
+  },
+  {
+    "id": "3cxubrop",
+    "name": "Maam Dessa Loan 1",
+    "entries": [
+      {
+        "id": "d04fzsql",
+        "dueDate": "2026-07-30",
+        "amount": 21667,
+        "paid": false,
+        "paidDate": null
+      },
+      {
+        "id": "dnnkw7fk",
+        "dueDate": "2026-08-30",
+        "amount": 21666,
+        "paid": false,
+        "paidDate": null
+      }
+    ]
+  }
+]
