@@ -2,15 +2,7 @@
   {
     "id": "ool0i5k6",
     "name": "Water Balmeo",
-    "entries": [
-      {
-        "id": "rfnhn217",
-        "dueDate": "2026-05-30",
-        "amount": 300,
-        "paid": true,
-        "paidDate": "2026-07-04"
-      }
-    ]
+    "entries": []
   },
   {
     "id": "hrdfizcc",
